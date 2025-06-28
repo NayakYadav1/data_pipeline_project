@@ -1,4 +1,4 @@
-name,age,salary
-John Smith,28,50000
-Alice Wonderland,35,60000
-Jane Mary Doe,32,62000
+name,age,gender,email,date_of_birth
+John Smith,30,Male,john@example.com,1993-04-02
+Jane Mary Doe,22,Female,jane@example.com,2002/05/10
+Sam Miller,40,Male,sam@example.com,1985.09.21

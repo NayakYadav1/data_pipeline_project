@@ -1,4 +1,0 @@
-filename: mytable
-task: imp, clean, selectcol, filter
-cols: first_name, middle_name, last_name, age, salary
-filter: age > 30

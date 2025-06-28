@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 import os
+from utils import split_name_column, convert_dates, save_to_db
 
 def parse_config(file_path):
     with open(file_path, 'r') as f:
@@ -12,7 +13,7 @@ def parse_config(file_path):
     if match:
         config['filename'] = match.group(1)
     else:
-        raise ValueError("❌ 'filename:' not found or incorrect in config!")
+        raise ValueError("❌ 'filename:' not found!")
 
     match = re.search(r'task:\s*([\w,\s]+)', content)
     config['tasks'] = [t.strip().lower() for t in match.group(1).split(',')] if match else []
@@ -26,67 +27,52 @@ def parse_config(file_path):
     return config
 
 
-def split_name_column(df):
-    if 'name' in df.columns:
-        print("👥 Splitting 'name' into first, middle, last and removing 'name'...")
-        name_split = df['name'].str.split(' ', expand=True)
-        df['first_name'] = name_split[0]
-        if name_split.shape[1] == 2:
-            df['middle_name'] = ''
-            df['last_name'] = name_split[1]
-        elif name_split.shape[1] >= 3:
-            df['middle_name'] = name_split[1]
-            df['last_name'] = name_split[2]
-        else:
-            df['middle_name'] = ''
-            df['last_name'] = ''
-        df.drop(columns=['name'], inplace=True)
-    return df
-
-
-def convert_dates(df):
-    print("📅 Checking for date columns to standardize...")
-    for col in df.columns:
-        if df[col].dtype == 'object':
-            try:
-                df[col] = pd.to_datetime(df[col])
-                df[col] = df[col].dt.strftime('%Y-%m-%d')
-                print(f"✅ Standardized column '{col}' to date format.")
-            except Exception:
-                continue
-    return df
-
-
 def process_file(file_path):
     config = parse_config(file_path)
-    file_to_load = f"input_files/{config['filename']}.csv"
-    print(f"📂 Processing file: {file_to_load}")
+    filename_base = config['filename']
+    base_path = f"input_files/{filename_base}"
+    full_path = None
 
-    try:
-        df = pd.read_csv(file_to_load)
-    except FileNotFoundError:
-        print(f"❌ File not found: {file_to_load}")
+    for ext in ['.csv', '.xlsx', '.json']:
+        test_path = base_path + ext
+        if os.path.exists(test_path):
+            full_path = test_path
+            break
+
+    if not full_path:
+        print("❌ No matching file found with .csv/.xlsx/.json.")
         return
 
-    # Clean
-    if 'clean' in config['tasks']:
-        print("🧹 Cleaning: Removing nulls and duplicates...")
-        df.drop_duplicates(inplace=True)
-        df.dropna(inplace=True)
+    try:
+        print(f"📂 Reading file: {full_path}")
+        if full_path.endswith('.csv'):
+            df = pd.read_csv(full_path)
+        elif full_path.endswith('.xlsx'):
+            df = pd.read_excel(full_path)
+        elif full_path.endswith('.json'):
+            df = pd.read_json(full_path)
+    except Exception as e:
+        print(f"❌ Error loading file: {e}")
+        return
 
-    # Split name before filtering (so we can use first_name/last_name if needed)
+    if 'clean' in config['tasks']:
+        print("🧹 Cleaning: Removing duplicates...")
+        df.drop_duplicates(inplace=True)
+
     df = split_name_column(df)
 
-    # Filter
     if 'filter' in config['tasks'] and config['filter']:
+
+        for col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='ignore')
+
         print(f"🔍 Applying filter: {config['filter']}")
         try:
             df = df.query(config['filter'])
         except Exception as e:
-            print(f"❌ Filter error: {e}")
+            print(f"❌ Invalid filter: {e}")
             return
 
-    # Select columns (only if mentioned in config)
     if 'selectcol' in config['tasks'] and config['cols']:
         print(f"🧾 Selecting columns: {config['cols']}")
         missing = [col for col in config['cols'] if col not in df.columns]
@@ -95,10 +81,11 @@ def process_file(file_path):
             return
         df = df[config['cols']]
 
-    # Convert any dates
     df = convert_dates(df)
 
-    # Save
-    output_path = f"data/cleaned_{config['filename']}.csv"
+    save_to_db(df, filename_base)
+
+    os.makedirs("data", exist_ok=True)
+    output_path = f"data/cleaned_{filename_base}.csv"
     df.to_csv(output_path, index=False)
-    print(f"✅ Saved cleaned data to: {output_path}")
+    print(f"✅ Saved to: {output_path}")

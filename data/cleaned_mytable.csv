@@ -1,4 +1,4 @@
-first_name,middle_name,last_name,age,salary
-John,Smith,,28,50000
-Alice,Wonderland,,35,60000
-Jane,Mary,Doe,32,62000
+first_name,middle_name,last_name,age,email,date_of_birth
+John,Smith,,30,john@example.com,1993-04-02
+Jane,Mary,Doe,22,jane@example.com,2002-05-10
+Sam,Miller,,40,sam@example.com,1985-09-21
