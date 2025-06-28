@@ -1,4 +1,4 @@
 filename: mytable
-task: imp, clean, selectcol
+task: imp, clean, selectcol, filter
 cols: name, age, salary
 filter: age > 30
