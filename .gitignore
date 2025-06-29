@@ -1,0 +1,46 @@
+# Bytecode and cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Environment variables
+.env
+.env.*
+
+# SQLite database (optional if you're using SQLite locally)
+*.sqlite3
+*.db
+
+# Uploaded files
+/media/
+*.log
+
+# Django-specific
+db.sqlite3
+staticfiles/
+*.pot
+*.mo
+
+# Migrations
+**/migrations/
+**/migrations/*.py
+!*/migrations/__init__.py
+
+# Coverage and test output
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Editor and system files
+*.swp
+*.swo
+*.bak
+*.tmp
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
