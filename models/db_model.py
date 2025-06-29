@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from datetime import datetime
 
-client = MongoClient("mongodb+srv://Nayak:Nayak123@cluster0.djylyfj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+client = MongoClient("mongodb+srv://<<Username>>:<<Password>>@cluster0.djylyfj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client["data_pipeline"]
 
 def insert_cleaned_data(collection, df, file_type, status="success"):

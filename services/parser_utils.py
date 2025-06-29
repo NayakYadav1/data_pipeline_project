@@ -1,43 +1,45 @@
 import pandas as pd
-import xml.etree.ElementTree as ET
-import json
-from io import BytesIO, StringIO
+import sqlite3
+import tempfile
 
-def parse_csv(file):
-    return pd.read_csv(file)
+def parse_sqlite(file):
+    # Save uploaded file to a temporary location
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".db") as tmp:
+        tmp.write(file.read())
+        tmp_path = tmp.name
 
-def parse_excel(file):
-    return pd.read_excel(file)
+    # Connect to SQLite and list tables
+    conn = sqlite3.connect(tmp_path)
+    tables = pd.read_sql_query(
+        "SELECT name FROM sqlite_master WHERE type='table';", conn
+    )['name'].tolist()
+    if not tables:
+        conn.close()
+        raise ValueError("No tables found in SQLite database.")
 
-def parse_json(file):
-    try:
-        return pd.read_json(file)
-    except Exception:
-        file.seek(0)
-        data = json.load(file)
-        return pd.json_normalize(data)
-
-def parse_xml(file):
-    file.seek(0)
-    tree = ET.parse(file)
-    root = tree.getroot()
-    all_rows = []
-    for child in root:
-        row = {}
-        for elem in child:
-            row[elem.tag] = elem.text
-        all_rows.append(row)
-    return pd.DataFrame(all_rows)
+    # For simplicity, read the first table
+    df = pd.read_sql_query(f"SELECT * FROM {tables[0]}", conn)
+    conn.close()
+    return df
 
 def detect_and_parse(file, filename):
     ext = filename.lower().split('.')[-1]
     if ext == 'csv':
-        return parse_csv(file)
+        return pd.read_csv(file)
     elif ext in ['xls', 'xlsx']:
-        return parse_excel(file)
+        return pd.read_excel(file)
     elif ext == 'json':
-        return parse_json(file)
+        try:
+            return pd.read_json(file)
+        except Exception:
+            file.seek(0)
+            import json
+            data = json.load(file)
+            return pd.json_normalize(data)
     elif ext == 'xml':
-        return parse_xml(file)
+        # ... your XML logic ...
+        pass
+    elif ext == 'db':
+        return parse_sqlite(file)
     else:
         raise ValueError("Unsupported file format")

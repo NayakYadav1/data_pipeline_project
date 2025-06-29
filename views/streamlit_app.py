@@ -4,7 +4,10 @@ import pandas as pd
 
 st.title("Universal Data Uploader & Cleaner")
 
-uploaded_file = st.file_uploader("Upload CSV, Excel, JSON, or XML", type=["csv", "xlsx", "json", "xml"])
+uploaded_file = st.file_uploader(
+    "Upload CSV, Excel, JSON, XML, or SQLite DB file",
+    type=["csv", "xlsx", "json", "xml", "db"]
+)
 
 if uploaded_file:
     files = {"file": (uploaded_file.name, uploaded_file.getvalue())}
