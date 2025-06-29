@@ -13,7 +13,7 @@ def parse_config(file_path):
     if match:
         config['filename'] = match.group(1)
     else:
-        raise ValueError("❌ 'filename:' not found!")
+        raise ValueError(" 'filename:' not found!")
 
     match = re.search(r'task:\s*([\w,\s]+)', content)
     config['tasks'] = [t.strip().lower() for t in match.group(1).split(',')] if match else []
@@ -40,7 +40,7 @@ def process_file(file_path):
             break
 
     if not full_path:
-        print("❌ No matching file found with .csv/.xlsx/.json.")
+        print(" No matching file found with .csv/.xlsx/.json.")
         return
 
     try:
@@ -52,39 +52,57 @@ def process_file(file_path):
         elif full_path.endswith('.json'):
             df = pd.read_json(full_path)
     except Exception as e:
-        print(f"❌ Error loading file: {e}")
+        print(f" Error loading file: {e}")
         return
 
     if 'clean' in config['tasks']:
         print("🧹 Cleaning: Removing duplicates...")
         df.drop_duplicates(inplace=True)
 
+    # ✅ Split name column if needed
     df = split_name_column(df)
 
+    # ✅ Convert 'age' to numeric before filtering
     if 'filter' in config['tasks'] and config['filter']:
-
-        for col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='ignore')
+        print("🔄 Converting 'age' column to numeric for filtering...")
+        if 'age' in df.columns:
+            df['age'] = pd.to_numeric(df['age'], errors='coerce')
 
         print(f"🔍 Applying filter: {config['filter']}")
         try:
             df = df.query(config['filter'])
+            print(f"✅ Data after filtering:\n{df.head()}")
         except Exception as e:
-            print(f"❌ Invalid filter: {e}")
+            print(f" Invalid filter: {e}")
             return
 
     if 'selectcol' in config['tasks'] and config['cols']:
         print(f"🧾 Selecting columns: {config['cols']}")
         missing = [col for col in config['cols'] if col not in df.columns]
         if missing:
-            print(f"❌ Missing columns in data: {missing}")
+            print(f" Missing columns in data: {missing}")
             return
         df = df[config['cols']]
 
+    # ✅ Date conversion
     df = convert_dates(df)
 
+    print("📝 Data before saving:")
+    print(df)
+
+     # ✅ Select columns in desired order before saving
+    desired_cols = ['first_name', 'middle_name', 'last_name', 'age', 'gender', 'email', 'date_of_birth']
+    df = df[[col for col in desired_cols if col in df.columns]]
+
+    # ✅ Add S.No column starting from 1
+    df.reset_index(drop=True, inplace=True)
+    df.index = df.index + 1
+    df.insert(0, 'S.No', df.index)
+
+    # ✅ Save to DB
     save_to_db(df, filename_base)
 
+    # ✅ Save cleaned data
     os.makedirs("data", exist_ok=True)
     output_path = f"data/cleaned_{filename_base}.csv"
     df.to_csv(output_path, index=False)

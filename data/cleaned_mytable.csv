@@ -1,4 +1,3 @@
-first_name,middle_name,last_name,age,email,date_of_birth
-John,Smith,,30,john@example.com,1993-04-02
-Jane,Mary,Doe,22,jane@example.com,2002-05-10
-Sam,Miller,,40,sam@example.com,1985-09-21
+S.No,first_name,middle_name,last_name,age,gender,email,date_of_birth
+1,John,-,Smith,30,Male,john@example.com,1993-04-02
+2,Sam,-,Miller,40,Male,sam@example.com,-

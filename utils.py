@@ -4,24 +4,26 @@ import os
 
 def split_name_column(df):
     if 'name' in df.columns:
-        print("👥 Splitting 'name' into first, middle, last and removing 'name'...")
-        split = df['name'].astype(str).str.strip().str.split(' ', expand=True)
-        df['first_name'] = split[0]
-        df['middle_name'] = split[1] if split.shape[1] > 2 else ''
-        df['last_name'] = split[2] if split.shape[1] > 2 else split[1] if split.shape[1] > 1 else ''
-        df.drop(columns=['name'], inplace=True)
+        split_names = df['name'].str.split(' ', n=2, expand=True)
+        df['first_name'] = split_names[0].fillna('-')
+        # If only two parts, middle will be NaN
+        df['middle_name'] = split_names[1].where(split_names[2].notna(), '-').fillna('-')
+        df['last_name'] = split_names[2].fillna('-')
+        # If only two parts, move second part to last_name
+        mask_two_parts = split_names[2].isna() & split_names[1].notna()
+        df.loc[mask_two_parts, 'last_name'] = split_names[1][mask_two_parts]
+        df.loc[mask_two_parts, 'middle_name'] = '-'
+        df = df.drop(columns=['name'])
     else:
-        print("⚠️ 'name' column not found. Skipping split.")
+        df['first_name'] = '-'
+        df['middle_name'] = '-'
+        df['last_name'] = '-'
     return df
 
 def convert_dates(df):
-    print("📅 Converting date-like columns...")
-    for col in df.columns:
-        if df[col].dtype == 'object':
-            parsed = pd.to_datetime(df[col], format="mixed", errors='coerce')  # Use mixed format
-            if parsed.notna().sum() > 0:
-                df[col] = parsed.dt.strftime('%Y-%m-%d')
-                print(f"✅ Converted '{col}' to date format.")
+    if 'date_of_birth' in df.columns:
+        df['date_of_birth'] = pd.to_datetime(df['date_of_birth'], errors='coerce').dt.strftime('%Y-%m-%d')
+        df['date_of_birth'] = df['date_of_birth'].fillna('-')
     return df
 
 def save_to_db(df, table_name):
