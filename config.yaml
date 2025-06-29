@@ -1,0 +1,47 @@
+columns:
+- first_name
+- middle_name
+- last_name
+- age
+- gender
+- email
+- date_of_birth
+- phone_number
+- DOB
+- City
+- Interests
+- Country
+- Name
+- Gender
+- UserID
+- zip
+- birthdate
+- city
+- cc_type
+- SSN
+- maiden name
+- first name
+- cc_expiredate
+- state
+- cc_cvc
+- CCN
+- address
+- last name
+- phone
+formatting:
+  date_of_birth: '%Y-%m-%d'
+  email: email
+  phone_number: phone
+name_split:
+  source: name
+  target:
+  - first_name
+  - middle_name
+  - last_name
+null_handling:
+  categorical: mode
+  numeric: mean
+  text_placeholder: Unknown
+validation:
+  email: ^[\w\.-]+@[\w\.-]+\.\w+$
+  phone_number: ^\+?\d{10,15}$

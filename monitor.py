@@ -1,7 +1,19 @@
 import os
 import time
 import shutil
-from process import process_file
+import logging
+from preprocessor import process_file
+
+# --- Logging setup (paste here) ---
+logging.basicConfig(
+    filename='data_pipeline.log',
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s:%(message)s'
+)
+
+def log_event(message):
+    logging.info(message)
+# --- End logging setup ---
 
 WATCH_FOLDER = 'input_files'
 PROCESSED_FOLDER = 'processed_files'
@@ -21,8 +33,10 @@ def monitor_folder():
             if file.endswith(".txt"):
                 filepath = os.path.join(WATCH_FOLDER, file)
                 print(f"📥 New instruction: {file}")
+                log_event(f"Processing new instruction file: {file}")  # Example usage
                 process_file(filepath)
                 shutil.move(filepath, os.path.join(PROCESSED_FOLDER, file))
+                log_event(f"Moved processed file: {file}")
 
         already_seen = current_files
         time.sleep(5)

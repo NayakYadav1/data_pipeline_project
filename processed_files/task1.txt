@@ -1,4 +1,0 @@
-filename: mytable
-task: clean, filter, selectcol
-cols: first_name, middle_name, last_name, age, email, date_of_birth
-filter: age > 25
