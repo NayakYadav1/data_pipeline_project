@@ -9,7 +9,6 @@ def detect_name_column(df):
     return None
 
 def split_name_column(df, name_col):
-    # Split into first, middle, last (handles 1, 2, or 3+ parts)
     names = df[name_col].astype(str).str.strip().str.split(r'\s+', n=2, expand=True)
     df['first_name'] = names[0].fillna('-')
     if names.shape[1] > 1:
@@ -26,7 +25,13 @@ def split_name_column(df, name_col):
 
 def smart_fillna(df):
     for col in df.columns:
-        if pd.api.types.is_numeric_dtype(df[col]):
+        if col.lower() == "age":
+            # Fill missing ages with mode and convert to int
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+            mode = df[col].mode()
+            fill_value = int(mode[0]) if not mode.empty else 0
+            df[col] = df[col].fillna(fill_value).astype(int)
+        elif pd.api.types.is_numeric_dtype(df[col]):
             df[col] = pd.to_numeric(df[col], errors='coerce')
             df[col] = df[col].fillna(df[col].mean())
         else:
@@ -42,7 +47,6 @@ def validate_column(df, col, pattern):
 
 def preprocess(df):
     warnings = []
-    # Smart name detection and splitting
     name_col = detect_name_column(df)
     if name_col:
         df = split_name_column(df, name_col)
@@ -50,24 +54,25 @@ def preprocess(df):
     else:
         warnings.append("No name column detected; skipping name split.")
 
-    # Fill nulls smartly
     df = smart_fillna(df)
 
-    # Validate common fields
-    invalids = {}
-    if 'email' in [c.lower() for c in df.columns]:
-        email_col = [c for c in df.columns if c.lower() == 'email'][0]
+    # Validate emails
+    email_col = next((c for c in df.columns if 'email' in c.lower()), None)
+    if email_col:
         invalid_mask = validate_column(df, email_col, r"^[\w\.-]+@[\w\.-]+\.\w+$")
         if invalid_mask.any():
             warnings.append(f"Invalid emails found in column '{email_col}'.")
             df.loc[invalid_mask, email_col] = "Invalid"
-    if 'phone' in [c.lower() for c in df.columns]:
-        phone_col = [c for c in df.columns if 'phone' in c.lower()][0]
+
+    # Validate phone
+    phone_col = next((c for c in df.columns if 'phone' in c.lower()), None)
+    if phone_col:
         invalid_mask = validate_column(df, phone_col, r"^\+?\d{7,15}$")
         if invalid_mask.any():
             warnings.append(f"Invalid phone numbers found in column '{phone_col}'.")
             df.loc[invalid_mask, phone_col] = "Invalid"
-    # Try to standardize date columns
+
+    # Standardize date columns
     for col in df.columns:
         if 'date' in col.lower():
             try:
